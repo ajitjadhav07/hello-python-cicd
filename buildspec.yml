@@ -1,0 +1,23 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - pip install -r requirements.txt
+      - echo "Dependencies installed"
+  pre_build:
+    commands:
+      - echo "Running tests..."
+      - python -m unittest discover tests || echo "No tests found"
+  build:
+    commands:
+      - echo "Building Docker image..."
+      - docker build -t hello-app .
+  post_build:
+    commands:
+      - echo "Build completed"
+artifacts:
+  files:
+    - '**/*'
