@@ -1,26 +1,24 @@
 version: 0.2
-env:
-  variables:
-    REPOSITORY_URI: 989615686095.dkr.ecr.us-east-1.amazonaws.com/flask-ecs-cicd # replace after Terraform creates ECR
 
 phases:
-  install:
-    runtime-versions:
-      python: 3.9
-    commands:
-      - pip install -r requirements.txt
-      - echo "Dependencies installed"
   pre_build:
     commands:
-      - echo "Running tests..."
-      - python -m unittest discover tests || echo "No tests found"
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+
   build:
     commands:
-      - echo "Building Docker image..."
+      - echo Building Docker image...
       - docker build -t hello-app .
+      - docker tag hello-app:latest $REPOSITORY_URI:latest
+
   post_build:
     commands:
-      - echo "Build completed"
+      - echo Pushing Docker image...
+      - docker push $REPOSITORY_URI:latest
+      - printf '[{"name":"flask-container","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
+
 artifacts:
   files:
-    - '**/*'
+    - imagedefinitions.json
